@@ -1,116 +1,48 @@
-# JobAgent AI 🚀
+# JobAgent AI
 
-JobAgent AI is a comprehensive, full-stack SaaS application designed to streamline and supercharge the job application process. By leveraging the power of LLMs (Large Language Models), JobAgent AI helps job seekers tailor their CVs and Cover Letters for specific roles, track applications, and optimize their chances of landing their dream job.
+Web app prototype for job seekers: upload a CV, paste a job posting, and get a CV and cover letter rewritten for that posting, plus a board to track applications. Free users get 5 tailored applications; a Stripe subscription removes the limit.
 
-![JobAgent AI](https://aijobagent-kwkntto4.manus.space/favicon.ico)
+> **How this was built:** the app was generated with [Manus](https://manus.im), an AI app builder. It runs on Manus platform services (sign-in, LLM gateway, file storage), so it does not run standalone from this repository without replacing those parts. I keep it here as a product prototype, not as an example of code I wrote by hand.
 
-## 🌟 Key Features
+## What it does
 
-*   **Intelligent CV Parsing:** Upload your existing CV (PDF/DOCX). The AI automatically parses and understands your professional profile.
-*   **Job-Specific Tailoring:** Paste a job description or URL, and the AI generates a customized, tailored CV highlighting your most relevant experience.
-*   **Personalized Cover Letters:** Automatically generate compelling, authentic cover letters that match the tone and requirements of the target company.
-*   **Application Tracking (CRM for Job Seekers):** A built-in Kanban-style board to track the status of your applications (Applied, Interviewing, Offer, Rejected).
-*   **Freemium Model & Stripe Integration:** Users get a trial limit (e.g., 5 free tailored applications). Premium subscriptions are handled seamlessly via Stripe.
-*   **Secure File Storage:** CV uploads are securely accommodated via AWS S3 integrations.
+- **CV parsing:** a PDF or DOCX CV is sent to the LLM, which returns structured JSON (experience, skills, education).
+- **Tailored CV:** the parsed CV and the job posting go to the LLM with a rule to use only information from the original CV and not invent experience or skills. Output is Markdown.
+- **Cover letter:** generated from the same inputs.
+- **Application tracking:** applications with status (applied, interview, rejected, offer).
+- **Freemium limit and billing:** 5 free generations, then Stripe Checkout; a webhook upgrades or downgrades the user's plan.
 
-## 🛠️ Technology Stack
+## Stack
 
-This project is built with a modern, high-performance web stack:
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, Vite, Tailwind CSS, shadcn/ui |
+| API | Express, tRPC, Zod |
+| Database | MySQL via Drizzle ORM |
+| LLM | `gemini-2.5-flash` through the Manus Forge gateway (`server/_core/llm.ts`) |
+| Auth and file storage | Manus OAuth and the Manus storage proxy (`server/_core/`, `server/storage.ts`) |
+| Payments | Stripe Checkout, Customer Portal and webhooks (`server/stripeWebhook.ts`) |
+| Tests | Vitest (`server/*.test.ts`) |
 
-**Frontend:**
-*   [React](https://reactjs.org/) (v19)
-*   [Vite](https://vitejs.dev/) - Blazing fast frontend tooling
-*   [Tailwind CSS](https://tailwindcss.com/) - Utility-first styling
-*   [shadcn/ui](https://ui.shadcn.com/) & [Radix UI](https://www.radix-ui.com/) - Accessible, unstyled UI components
-*   [Framer Motion](https://www.framer.com/motion/) - Smooth animations
+## Running it outside Manus
 
-**Backend:**
-*   [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/) - Server environment
-*   [tRPC](https://trpc.io/) - End-to-end typesafe APIs
-*   [Drizzle ORM](https://orm.drizzle.team/) - Lightweight, performant TypeScript ORM
-*   [Zod](https://zod.dev/) - Schema validation
+`server/_core/env.ts` expects these variables: `DATABASE_URL`, `JWT_SECRET`, `VITE_APP_ID`, `OAUTH_SERVER_URL`, `OWNER_OPEN_ID`, `BUILT_IN_FORGE_API_URL`, `BUILT_IN_FORGE_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VITE_STRIPE_PUBLISHABLE_KEY`.
 
-**Integrations:**
-*   **LLM Provider** for text generation and CV parsing
-*   **Stripe API** for payment processing and subscription webhook handling
-*   **AWS S3** for resume storage
+The OAuth, Forge and storage values only exist inside Manus. To run it elsewhere you would need to:
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-Ensure you have the following installed on your local machine:
-*   [Node.js](https://nodejs.org/en/download/) (v18 or higher recommended)
-*   [pnpm](https://pnpm.io/) - Fast, disk space efficient package manager
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Taykuth/ai-job-agent.git
-   cd ai-job-agent
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   pnpm install
-   ```
-
-3. **Set up Environment Variables:**
-   Create a `.env` file in the root directory and add the necessary environment variables:
-   ```env
-   # Database connection
-   DATABASE_URL=your_database_url
-   
-   # Stripe configuration
-   STRIPE_SECRET_KEY=sk_test_...
-   STRIPE_WEBHOOK_SECRET=whsec_...
-   
-   # AWS S3 (for CV uploads)
-   AWS_REGION=your_aws_region
-   AWS_ACCESS_KEY_ID=your_access_key
-   AWS_SECRET_ACCESS_KEY=your_secret_key
-   S3_BUCKET_NAME=your_bucket_name
-   ```
-
-4. **Initialize the Database:**
-   Push the schema to your database.
-   ```bash
-   pnpm run db:push
-   ```
-
-### Running the Application
-
-To start the development server (both frontend and backend concurrently via Vite & tsx):
+1. replace `invokeLLM` in `server/_core/llm.ts` with a direct OpenAI or Gemini client,
+2. replace the storage helpers in `server/storage.ts` with S3 or local storage,
+3. replace Manus OAuth with your own sign-in.
 
 ```bash
+pnpm install
+pnpm run db:push
 pnpm run dev
-```
-
-The application should now be running locally. By default, Vite will start the frontend on `http://localhost:5000` (or another available port).
-
-## 🧪 Testing
-
-The project uses [Vitest](https://vitest.dev/) for blazing-fast unit and integration testing. Run the test suite using:
-
-```bash
 pnpm run test
 ```
 
-## 🏗️ Build for Production
+## Status
 
-To create a production-ready build of both the frontend (Vite) and backend (esbuild):
+Prototype. The Stripe keys and webhook endpoint are still listed as pending in `todo.md`, so payments have not been set up for a live account.
 
-```bash
-pnpm run build
-```
-
-Then, you can start the production server:
-
-```bash
-pnpm run start
-```
-
-## 📜 License
-
-This project is licensed under the MIT License - see the `package.json` for details.
+MIT License.
